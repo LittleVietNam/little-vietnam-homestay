@@ -1,0 +1,527 @@
+<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Little VietNam · Quản lý 7 phòng</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f5ef;color:#20372d;font:16px system-ui,sans-serif}main{max-width:1120px;margin:auto;padding:28px 16px}header,section{background:white;border:1px solid #dfe7db;border-radius:20px;padding:22px;margin-bottom:16px}header{background:#ffdfba;border-color:#f2c99b;color:#4b2d16}h1,h2,p{margin:0 0 12px}h1{font-size:clamp(28px,5vw,44px)}h2{font-size:21px}button,input,select{font:inherit;border:1px solid #aebeb4;border-radius:8px;padding:9px;background:white;color:#20372d}button{cursor:pointer}button.primary{background:#23634e;color:white;border-color:#23634e}form,.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:end}label{display:grid;gap:4px}input,select{max-width:100%}.scroll{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap}td,th{text-align:left;border-bottom:1px solid #e2eae2;padding:9px}.calendar td,.calendar th{text-align:center}.calendar th:first-child{position:sticky;left:0;background:white}.calendar button{width:100%;min-width:44px}.busy{background:#ffcc79;color:#51300d;border-color:#dc9d40;font-weight:600}.busy:hover{background:#ffba55}.past{background:#edf0ed}.muted,small{color:#506459}header p{color:#684427}#notice{min-height:24px;margin-top:8px}#notice.error{color:#a52828}.actions{display:flex;flex-wrap:wrap;gap:8px}details{margin-top:12px}summary{cursor:pointer}
+
+[hidden]{display:none!important}.calendar th:first-child{z-index:1;box-shadow:2px 0 0 #e2eae2}.calendar.month td,.calendar.month th{padding:4px}.calendar.month td button{width:55px;min-height:38px;padding:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.calendar.month th:first-child{padding:8px}.calendar .currentDay{background:#ffdfba;color:#4b2d16}#weekView[aria-pressed=true],#monthView[aria-pressed=true]{background:#ffdfba;color:#4b2d16;border-color:#d99d64}
+
+.calendar:not(.month){table-layout:fixed;min-width:680px}
+.calendar:not(.month) th:first-child{width:115px}
+.calendar button.guestName{white-space:normal;overflow-wrap:anywhere;line-height:1.2;padding-inline:4px;min-height:42px}
+.calendar.month button.guestName{font-size:12px}
+</style>
+<section id="login" style="max-width:450px;margin:40px auto"><h1>Little VietNam</h1><button class="primary" id="google">Đăng nhập bằng Google</button><button id="googlePopup">Dùng cách đăng nhập khác</button><p id="loginStatus" role="status"></p></section><main hidden><header><h1>Little VietNam</h1><p>VN66, Venice 2 Street, Grand World, Phú Quốc</p><p>Lịch đặt phòng · 7 phòng</p><button id="logout">Đăng xuất</button><p id="connectionStatus" role="status"></p></header>
+<nav class="bar" style="margin-bottom:16px"><a href="#todayPanel">Hôm nay</a><a href="#calendarTitle">Lịch phòng</a><a href="#editor">Nhập đơn</a><a href="#ordersPanel">Danh sách đơn</a><a href="#revenuePanel">Doanh thu</a></nav><section id="todayPanel"><h2>Khách hôm nay</h2><div id="todayBookings"></div></section><section><h2 id="calendarTitle">Lịch phòng · 7 ngày</h2><div class="bar" style="margin-bottom:12px"><button id="weekView" class="primary" aria-pressed="true">7 ngày</button><button id="monthView" aria-pressed="false">Tháng</button></div><div class="bar"><button id="prev">‹ Tuần trước</button><label id="dayControl">Ngày bắt đầu<input type="date" id="start"></label><label id="monthControl" hidden>Chọn tháng<input type="month" id="month"></label><button id="next">Tuần sau ›</button><button id="today">Hôm nay</button></div><p class="muted" style="margin-top:12px">Chọn ô trống để thêm đơn. Chọn ô có khách để sửa đơn. Phòng trống lại vào ngày trả phòng.</p><div class="scroll" id="calendarScroll" tabindex="0" aria-label="Lịch phòng, cuộn ngang để xem thêm ngày"><table class="calendar" id="calendar"></table></div><details><summary>Đổi tên phòng</summary><form id="rooms"></form></details></section>
+<section id="editor"><h2 id="formTitle">Thêm đơn đặt phòng</h2><form id="booking"><label>Số đơn hàng<input name="orderNumber" maxlength="80" placeholder="Tự tạo nếu để trống"></label><label>Ngày đơn hàng<input name="orderDate" type="date"></label><label>Người tạo đơn<input name="createdBy" maxlength="120"></label>
+<label>Phòng<select name="room"></select></label><label>Tên khách<input name="guest" required maxlength="100"></label><label>Nhận phòng<input name="arrival" type="date" required></label><label>Trả phòng<input name="departure" type="date" required></label><label>Nguồn đặt<select name="source"><option value="">Chọn nguồn đặt</option><option>Booking.com</option><option>Agoda</option><option>Airbnb</option><option>Traveloka</option><option>Trực tiếp</option><option>Khác</option></select></label><label>Tiền phòng (₫)<input name="amount" type="number" min="0" step="1"></label><label>Tiền VAT<input name="vat" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="Chưa nhập"></label><label>VAT tính theo<select name="vatUnit"><option value="percent">%</option><option value="vnd">VNĐ</option></select></label><label>Tiền Hoa hồng<input name="commission" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="Chưa nhập"></label><label>Hoa hồng tính theo<select name="commissionUnit"><option value="percent">%</option><option value="vnd">VNĐ</option></select></label><label>Tiền đã nhận (₫)<input name="received" type="number" min="0" step="1" placeholder="Chưa xác nhận"></label><label>Trạng thái<select name="status"><option>Đã đặt</option><option>Đã nhận phòng</option><option>Đã trả phòng</option><option>Đã hủy</option></select></label><label>Ghi chú<input name="note" maxlength="300"></label><button class="primary">Lưu đơn</button><button type="button" id="clear">Làm mới</button></form><p id="netPreview" aria-live="polite" style="margin-top:12px"></p><div id="notice" role="status"></div></section>
+<section id="ordersPanel"><h2>Danh sách đơn</h2><label>Nguồn đặt<select id="sourceFilter"><option value="">Tất cả nguồn</option></select></label><label>Tìm đơn<input id="search" placeholder="Số đơn, tên khách, phòng, người tạo…"></label><p id="orderCount" class="muted" role="status" style="margin-top:10px"></p><div class="scroll"><table><thead><tr><th>Số đơn hàng</th><th>Ngày đơn hàng</th><th>Người tạo đơn</th><th>Khách</th><th>Phòng</th><th>Nhận</th><th>Trả</th><th>Nguồn</th><th>Tiền phòng</th><th>VAT / Hoa hồng</th><th>Dự kiến nhận</th><th>Đã nhận</th><th>Còn chờ</th><th>Thanh toán</th><th>Trạng thái</th><th>Cập nhật gần nhất</th><th>Ghi chú</th><th>Thao tác</th></tr></thead><tbody id="list"></tbody></table></div></section>
+<section id="revenuePanel"><h2>Doanh thu theo ngày nhận phòng</h2>
+<div class="bar">
+<label>Phòng<select id="revenueRoom"><option value="">Tất cả 7 phòng</option></select></label>
+<label>Thời gian<select id="revenuePeriod"><option value="month">Theo tháng</option><option value="year">Theo năm</option><option value="range">Khoảng ngày tùy chọn</option></select></label>
+<label id="revenueMonthControl">Chọn tháng<input type="month" id="revenueMonth"></label>
+<label id="revenueYearControl" hidden>Chọn năm<input type="number" id="revenueYear" min="1" max="9999" step="1"></label>
+<label id="revenueFromControl" hidden>Từ ngày<input type="date" id="revenueFrom"></label>
+<label id="revenueToControl" hidden>Đến ngày<input type="date" id="revenueTo"></label>
+</div>
+<p class="muted" style="margin-top:12px">Cộng tiền phòng đã nhập theo ngày nhận phòng. Đơn đã hủy được bỏ qua.</p>
+<p class="muted">Khi VAT và hoa hồng đều để trống, mặc định trừ 8% cho Booking.com, 25,5% cho Airbnb và 20% cho các nguồn còn lại. Nếu nhập mức riêng, ô còn trống tính là 0.</p><p id="revenueTotal" role="status"></p><p id="revenueNet"></p><p id="receivedSummary"></p>
+<div class="scroll"><table><thead><tr><th>Phòng</th><th>Số đơn</th><th>Tiền phòng</th><th>Thực nhận ước tính</th></tr></thead><tbody id="revenueList"></tbody></table></div></section>
+<section><h2>Sao lưu dữ liệu</h2><p class="muted">Dữ liệu dùng chung trên các thiết bị đăng nhập. Các đơn từ trang đặt phòng được nhập thủ công.</p><div class="actions"><button id="backup">Tải bản sao lưu</button><button id="restore">Khôi phục bản sao lưu</button><input id="file" type="file" accept=".json,application/json" hidden></div><p id="storageNotice" role="status"></p></section>
+</main>
+<script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
+import {getAuth,setPersistence,browserLocalPersistence,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,onAuthStateChanged,signOut} from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
+import {getFirestore,doc,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
+const app=initializeApp({apiKey:'AIzaSyDeKhq-0CxlwTAwwTppL6mRGMundcUsS-4',authDomain:'little-vietnam-af15b.firebaseapp.com',projectId:'little-vietnam-af15b',appId:'1:130524702995:web:5a492a077cfa07d5bb52e6'});
+const auth=getAuth(app);
+const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+const signInHost='little-vietnam-af15b.firebaseapp.com';
+
+const schedule=doc(getFirestore(app),'schedules','little-vietnam');
+
+'use strict';
+const $ = id => document.getElementById(id);
+const form = $('booking'), field = name => form.elements.namedItem(name);
+const statuses = ['Đã đặt','Đã nhận phòng','Đã trả phòng','Đã hủy'];
+const key = 'homestay-seven-v1';
+const dateKey = date => [date.getFullYear(),date.getMonth()+1,date.getDate()].map(n=>String(n).padStart(2,'0')).join('-');
+const now = () => dateKey(new Date());
+function shift(day, count) {
+  const date = new Date(day+'T12:00:00');
+  date.setDate(date.getDate()+count);
+  return dateKey(date);
+}
+const validDate = day => typeof day==='string' && /^\d{4}-\d{2}-\d{2}$/.test(day) && shift(day,0)===day;
+const short = day => day.slice(8,10)+'/'+day.slice(5,7);
+const overlap = (a,b) => a.room===b.room && a.status!=='Đã hủy' && b.status!=='Đã hủy' && a.arrival<b.departure && b.arrival<a.departure;
+const validOrderFields = b => (b.orderNumber===undefined || (typeof b.orderNumber==='string' && b.orderNumber.length<=80)) && (b.orderDate===undefined || b.orderDate==='' || validDate(b.orderDate)) && (b.createdBy===undefined || (typeof b.createdBy==='string' && b.createdBy.length<=120));
+const feeKeys=['vat','commission'];
+const feePoints=value=>Math.round(Number(value||0)*100);
+const validMoney=value=>typeof value==='string' && /^\d+$/.test(value) && Number.isSafeInteger(Number(value));
+const hasFees=booking=>feeKeys.some(key=>booking[key]!==undefined && booking[key]!=='');
+function defaultFeePoints(source) {
+  const channel=(source ?? '').trim().toLowerCase();
+  if(channel==='booking.com' || channel==='booking') return 800;
+  if(channel==='airbnb') return 2550;
+  return 2000;
+}
+function feeDetails(booking) {
+  let percent=0, fixed=0n;
+  for(const key of feeKeys) {
+    const value=booking[key] ?? '';
+    const unit=booking[key+'Unit'] ?? 'percent';
+    if(unit==='vnd') {
+      if(value!=='' && !validMoney(value)) return null;
+      fixed+=BigInt(value || '0');
+    } else if(unit==='percent') {
+      if(value!=='' && (typeof value!=='string' || !/^\d{1,3}(?:\.\d{1,2})?$/.test(value))) return null;
+      percent+=feePoints(value);
+    } else return null;
+  }
+  if(percent>10000) return null;
+  if(!hasFees(booking)) percent=defaultFeePoints(booking.source);
+  if(!validMoney(booking.amount)) return {net:null};
+  const amount=BigInt(booking.amount);
+  if(fixed*10000n+amount*BigInt(percent)>amount*10000n) return null;
+  return {net:estimateNet(amount,BigInt(percent))-fixed};
+}
+const validBooking = b => b && (b.received===undefined || b.received==='' || validMoney(b.received)) && validOrderFields(b) && feeDetails(b)!==null && ['id','guest','source','note','amount'].every(k=>typeof b[k]==='string') && b.id && b.guest.trim() && /^[0-6]$/.test(b.room) && validDate(b.arrival) && validDate(b.departure) && b.arrival<b.departure && statuses.includes(b.status) && (b.amount==='' || (/^\d+$/.test(b.amount) && Number.isSafeInteger(Number(b.amount))));
+function validData(data) {
+  return data && Array.isArray(data.rooms) && data.rooms.length===7 && data.rooms.every(r=>typeof r==='string' && r.trim()) && Array.isArray(data.bookings) && data.bookings.every(validBooking) && new Set(data.bookings.map(b=>b.id)).size===data.bookings.length && !data.bookings.some((b,i)=>data.bookings.slice(0,i).some(other=>overlap(b,other)));
+}
+
+let state = {"rooms":["Phòng 201","Phòng 202","Phòng 203","Phòng 301","Phòng 302","Phòng 401","Phòng 402"],"bookings":[]};
+let editing = null, revision = null, saving = false;
+
+const initial=state;
+function applySnapshot(snapshot) {
+  const current=snapshot.exists()?snapshot.data():{revision:0,state:initial};
+  if(!validData(current.state) || !Number.isSafeInteger(current.revision)) throw Error('Dữ liệu lịch không hợp lệ.');
+  if(revision!==null && current.revision<=revision) return;
+  revision=current.revision;
+  state=current.state;
+  renderRooms(); renderCalendar(); renderList(); renderRevenue();
+}
+async function persist(next) {
+  if(revision===null || saving) throw Error('Chị chờ lịch tải xong rồi thử lại.');
+  saving=true;
+  const expected=revision;
+  try {
+    await runTransaction(schedule.firestore,async transaction=>{
+      const snapshot=await transaction.get(schedule);
+      if((snapshot.data()?.revision ?? 0)!==expected) throw Error('Lịch vừa thay đổi trên thiết bị khác. Chị kiểm tra lại rồi bấm lưu lần nữa.');
+      transaction.set(schedule,{revision:expected+1,state:next});
+    });
+    if(revision<=expected+1){revision=expected+1;state=next;}
+  } finally {saving=false;}
+}
+function make(tag, content, parent) {
+  const el = document.createElement(tag);
+  el.textContent = content;
+  parent.append(el);
+  return el;
+}
+function button(parent, label, action, css) {
+  const el = make('button',label,parent);
+  el.type = 'button';
+  if(css) el.className = css;
+  el.onclick = action;
+  return el;
+}
+function notice(message,error=false) {
+  $('notice').textContent = message;
+  $('notice').className = error?'error':'';
+}
+function reset(room='0',day=now()) {
+  form.reset();
+  updateNetPreview();
+  field('orderDate').value=now();
+  field('createdBy').value=auth.currentUser?.displayName || auth.currentUser?.email || '';
+  field('createdBy').readOnly=true;
+  field('room').value = room;
+  field('arrival').value = day;
+  field('departure').value = shift(day,1);
+  editing = null;
+  $('formTitle').textContent = 'Thêm đơn đặt phòng';
+  notice('');
+}
+function openBooking(b, room, day) {
+  reset(room,day);
+  if(b) {
+    editing=b.id;
+    for(const k of ['room','guest','arrival','departure','source','amount','status','note','orderNumber','orderDate','createdBy','vat','commission','received']) field(k).value=b[k] ?? '';
+    for(const key of feeKeys) field(key+'Unit').value=b[key+'Unit'] ?? 'percent';
+    if(b.source && !Array.from(field('source').options).some(option=>option.value===b.source)) make('option',b.source,field('source')).value=b.source;
+    field('source').value=b.source || '';
+    updateNetPreview();
+    $('formTitle').textContent='Sửa đơn đặt phòng';
+  }
+  $('editor').scrollIntoView({block:'nearest'});
+  field('guest').focus({preventScroll:true});
+}
+
+let monthly = false;
+function monthDays(month) {
+  const first=month+'-01';
+  const days=[];
+  for(let day=first;day.slice(0,7)===month;day=shift(day,1)) days.push(day);
+  return days;
+}
+function moveMonth(month,count) {
+  const date=new Date(month+'-01T12:00:00');
+  date.setMonth(date.getMonth()+count);
+  return dateKey(date).slice(0,7);
+}
+function selectView(showMonth) {
+  if(monthly===showMonth) return;
+  if(showMonth) $('month').value=($('start').value || now()).slice(0,7);
+  else if($('start').value.slice(0,7)!==$('month').value) $('start').value=$('month').value+'-01';
+  monthly=showMonth;
+  $('dayControl').hidden=monthly;
+  $('monthControl').hidden=!monthly;
+  $('prev').textContent=monthly?'‹ Tháng trước':'‹ Tuần trước';
+  $('next').textContent=monthly?'Tháng sau ›':'Tuần sau ›';
+  for(const [id,active] of [['weekView',!monthly],['monthView',monthly]]) {
+    $(id).classList.toggle('primary',active);
+    $(id).setAttribute('aria-pressed',String(active));
+  }
+  renderCalendar();
+  $('calendarScroll').scrollLeft=0;
+}
+function renderCalendar() {
+  const table = $('calendar');
+  table.replaceChildren();
+  const month=$('month').value || now().slice(0,7);
+  const days=monthly?monthDays(month):Array.from({length:7},(_,i)=>shift($('start').value || now(),i));
+  table.classList.toggle('month',monthly);
+  $('calendarTitle').textContent=monthly?'Lịch phòng · '+month.slice(5)+'/'+month.slice(0,4):'Lịch phòng · 7 ngày';
+  const head = make('tr','',make('thead','',table));
+  make('th','Phòng/Ngày',head);
+  for(const day of days) {
+    const column=make('th',monthly?day.slice(8):short(day),head);
+    column.scope='col';
+    column.title=day;
+    if(day===now()) column.className='currentDay';
+  }
+  const body=make('tbody','',table);
+  state.rooms.forEach((room,i)=>{
+    const row=make('tr','',body);
+    make('th',room,row).scope='row';
+    for(const day of days) {
+      const b=state.bookings.find(x=>x.room===String(i) && x.status!=='Đã hủy' && x.arrival<=day && x.departure>day);
+      const el=button(make('td','',row),b?b.guest:'Trống',()=>openBooking(b,String(i),day),b?(b.status==='Đã trả phòng'?'past':'busy'):'');
+      el.title=room+' · '+day+(b?' · '+b.guest+' · '+b.status:' · Trống');
+      el.setAttribute('aria-label',el.title);
+      if(b) {
+        el.classList.add('guestName');
+        const length=Array.from(b.guest).length;
+        if(length>14) el.style.fontSize=Math.max(12,Math.round(16*14/length))+'px';
+      }
+    }
+  });
+}
+const displayDate = day => short(day)+'/'+day.slice(0,4);
+
+function revenueRows(bookings, rooms, room, first, last) {
+  const rows=rooms.map((name,index)=>({name,room:String(index),count:0,total:0n,net:0n,missing:0,defaultFees:0}));
+  for(const booking of bookings) {
+    if(booking.status==='Đã hủy' || booking.arrival<first || booking.arrival>last) continue;
+    const row=rows[booking.room];
+    row.count++;
+    if(booking.amount==='') row.missing++;
+    else {
+      const amount=BigInt(booking.amount);
+      row.total+=amount;
+      row.net+=feeDetails(booking).net;
+      if(!hasFees(booking)) row.defaultFees++;
+    }
+  }
+  return room===''?rows:rows.filter(row=>row.room===room);
+}
+function estimateNet(amount,feeBasisPoints) {
+  return (amount*(10000n-feeBasisPoints)+5000n)/10000n;
+}
+function renderRevenue() {
+  const period=$('revenuePeriod').value;
+  for(const [control,kind] of [['Month','month'],['Year','year'],['From','range'],['To','range']]) {
+    $('revenue'+control+'Control').hidden=period!==kind;
+  }
+  const month=$('revenueMonth').value;
+  const year=$('revenueYear').value;
+  const days=monthDays(month);
+  const first=period==='month'?days[0]:period==='year'?year.padStart(4,'0')+'-01-01':$('revenueFrom').value;
+  const last=period==='month'?days.at(-1):period==='year'?year.padStart(4,'0')+'-12-31':$('revenueTo').value;
+  const list=$('revenueList'), summary=$('revenueTotal'), net=$('revenueNet');
+  net.textContent='';
+  $('receivedSummary').textContent='';
+  list.replaceChildren();
+  if(!validDate(first) || !validDate(last) || first>last) {
+    summary.textContent='Chị chọn thời gian hợp lệ để xem doanh thu.';
+    return;
+  }
+  const rows=revenueRows(state.bookings,state.rooms,$('revenueRoom').value,first,last);
+  const money=amount=>amount.toLocaleString('vi-VN')+' ₫';
+  const total=rows.reduce((sum,row)=>sum+row.total,0n);
+  const included=state.bookings.filter(b=>b.status!=='Đã hủy' && b.arrival>=first && b.arrival<=last && (!$('revenueRoom').value || b.room===$('revenueRoom').value));
+  const payments=included.map(paymentInfo);
+  const paid=payments.reduce((sum,p)=>sum+(p.received ?? 0n),0n);
+  const waiting=payments.reduce((sum,p)=>sum+(p.remaining ?? 0n),0n);
+  const unknown=payments.filter(p=>p.received===null).length;
+  $('receivedSummary').textContent='Đã xác nhận nhận: '+currency(paid)+' · Còn chờ của đơn đã xác nhận: '+currency(waiting)+(unknown?' · '+unknown+' đơn chưa xác nhận thanh toán':'');
+  const netTotal=rows.reduce((sum,row)=>sum+row.net,0n);
+  const defaultCount=rows.reduce((sum,row)=>sum+row.defaultFees,0);
+  const incomplete=rows.some(row=>row.missing);
+  net.textContent=(incomplete?'Tạm tính thực nhận: ':'Thực nhận ước tính: ')+money(netTotal)+(defaultCount?' · '+defaultCount+' đơn dùng mức mặc định theo nguồn đặt':'');
+  const missing=rows.reduce((sum,row)=>sum+row.missing,0);
+  summary.textContent='Tổng tiền phòng: '+money(total)+(missing?' · '+missing+' đơn chưa nhập tiền phòng':'');
+  for(const {name,count,total,net,missing,defaultFees} of rows) {
+    const row=make('tr','',list);
+    make('th',name,row).scope='row';
+    make('td',count,row);
+    make('td',money(total),row);
+    make('td',money(net)+(missing?' (tạm tính)':''),row);
+  }
+}
+const currency=amount=>amount.toLocaleString('vi-VN')+' ₫';
+function paymentInfo(b) {
+  const net=feeDetails(b)?.net;
+  const received=b.received===undefined || b.received===''?null:BigInt(b.received);
+  const remaining=net===null || net===undefined || received===null?null:(net>received?net-received:0n);
+  const status=received===null?'Chưa xác nhận':net===null || net===undefined?'Thiếu tiền phòng':received>net?'Nhận vượt dự kiến':remaining===0n?'Đã nhận đủ':received===0n?'Chưa nhận':'Đã nhận một phần';
+  return {net,received,remaining,status};
+}
+function renderToday() {
+  const panel=$('todayBookings');panel.replaceChildren();
+  for(const [title,key] of [['Nhận phòng','arrival'],['Trả phòng','departure']]) {
+    make('h3',title,panel);
+    const bookings=state.bookings.filter(b=>b.status!=='Đã hủy' && b[key]===now());
+    if(!bookings.length) make('p','Không có khách.',panel);
+    for(const b of bookings) button(panel,state.rooms[b.room]+' · '+b.guest,()=>openBooking(b,b.room,b.arrival));
+  }
+}
+function recentOrders(bookings,showAll) {
+  const rows=bookings.map((booking,index)=>({booking,index})).sort((a,b)=>
+    (b.booking.orderDate || b.booking.arrival).localeCompare(a.booking.orderDate || a.booking.arrival)
+    || b.index-a.index).map(item=>item.booking);
+  return showAll?rows:rows.slice(0,10);
+}
+function renderList() {
+  renderToday();
+  const sourceSelect=$('sourceFilter'), selectedSource=sourceSelect.value;
+  sourceSelect.replaceChildren();make('option','Tất cả nguồn',sourceSelect).value='';
+  for(const source of [...new Set(state.bookings.map(b=>b.source).filter(Boolean))].sort()) make('option',source,sourceSelect).value=source;
+  sourceSelect.value=selectedSource;
+
+  const list=$('list');
+  list.replaceChildren();
+  const term=$('search').value.trim().toLocaleLowerCase('vi');
+  const matches=state.bookings.filter(b=>
+    [b.orderNumber,b.createdBy,b.guest,b.source,b.status,state.rooms[b.room],b.note].join(' ').toLocaleLowerCase('vi').includes(term)
+    && (!sourceSelect.value || b.source===sourceSelect.value));
+  const rows=recentOrders(matches,Boolean(term || sourceSelect.value));
+  $('orderCount').textContent=term || sourceSelect.value
+    ? 'Tìm thấy '+rows.length+' đơn.'
+    : '10 đơn gần nhất theo ngày đơn hàng · Đang hiển thị '+rows.length+' / '+state.bookings.length+' đơn.';
+  for(const b of rows) {
+    const row=make('tr','',list);
+    const payment=paymentInfo(b);
+    const fee=payment.net==null || b.amount===''?'—':currency(BigInt(b.amount)-payment.net);
+    for(const value of [b.orderNumber||'—',b.orderDate?displayDate(b.orderDate):'—',b.createdBy||'—',b.guest,state.rooms[b.room],displayDate(b.arrival),displayDate(b.departure),b.source||'—',b.amount===''?'—':Number(b.amount).toLocaleString('vi-VN')+' ₫',fee,payment.net==null?'—':currency(payment.net),payment.received===null?'Chưa xác nhận':currency(payment.received),payment.remaining===null?'—':currency(payment.remaining),payment.status,b.status,b.updatedAt?new Date(b.updatedAt).toLocaleString('vi-VN')+' · '+(b.updatedBy||''):'—',b.note||'—']) make('td',value,row);
+    button(make('td','',row),'Sửa',()=>openBooking(b,b.room,b.arrival));
+  }
+  if(!rows.length) make('td','Chưa có đơn phù hợp.',make('tr','',list)).colSpan=19;
+}
+function renderRooms() {
+  const select=field('room'), selected=select.value;
+  const revenueRoom=$('revenueRoom'), selectedRevenueRoom=revenueRoom.value;
+  revenueRoom.replaceChildren();
+  make('option','Tất cả 7 phòng',revenueRoom).value='';
+  select.replaceChildren();
+  $('rooms').replaceChildren();
+  state.rooms.forEach((room,i)=>{
+    make('option',room,select).value=i;
+    make('option',room,revenueRoom).value=i;
+    const input=make('input','',make('label','Phòng '+(i+1),$('rooms')));
+    input.value=room;
+    input.required=true;
+    input.maxLength=40;
+  });
+  select.value=selected || '0';
+  revenueRoom.value=selectedRevenueRoom;
+  make('button','Lưu tên phòng',$('rooms'));
+}
+$('rooms').onsubmit=async e=>{
+  e.preventDefault();
+  const rooms=Array.from($('rooms').querySelectorAll('input'),input=>input.value.trim());
+  if(rooms.some(r=>!r)) return alert('Chị nhập đủ tên 7 phòng.');
+  try { await persist({...state,rooms}); renderRooms(); renderCalendar(); renderList(); renderRevenue(); $('rooms').closest('details').open=false; }
+  catch(error) { alert(error.message); }
+};
+function updateNetPreview() {
+  const booking={amount:field('amount').value,source:field('source').value};
+  for(const key of feeKeys) {
+    const amount=field(key);
+    const unit=field(key+'Unit').value;
+    const fixed=unit==='vnd';
+    amount.step=fixed?'1':'0.01';
+    amount.max=fixed?'':'100';
+    amount.inputMode=fixed?'numeric':'decimal';
+    booking[key]=amount.value;
+    booking[key+'Unit']=unit;
+  }
+  const fees=feeDetails(booking);
+  $('netPreview').textContent=!fees?'Chị kiểm tra lại mức phí. Tổng phí không được vượt tiền phòng.':
+    fees.net===null?'Nhập tiền phòng để xem dự kiến nhận. Mức mặc định theo nguồn hiện tại: '+(defaultFeePoints(booking.source)/100).toLocaleString('vi-VN')+'%.':
+    'Thực nhận ước tính: '+fees.net.toLocaleString('vi-VN')+' ₫'+(hasFees(booking)?'':' (mặc định trừ '+(defaultFeePoints(booking.source)/100).toLocaleString('vi-VN')+'%)');
+}
+form.addEventListener('input',updateNetPreview);
+form.addEventListener('change',updateNetPreview);
+form.onsubmit=async e=>{
+  e.preventDefault();
+  const booking=Object.fromEntries(Array.from(new FormData(form),([k,v])=>[k,v.trim()]));
+  const original=state.bookings.find(b=>b.id===editing);
+  booking.createdBy=original?.createdBy || auth.currentUser?.displayName || auth.currentUser?.email || '';
+  booking.createdByEmail=original?.createdByEmail || (original?'':auth.currentUser?.email || '');
+  booking.updatedBy=auth.currentUser?.email || '';
+  booking.updatedAt=new Date().toISOString();
+  booking.id=editing || (crypto.randomUUID?.() ?? Date.now()+'-'+Math.random());
+  if(!editing && !booking.orderNumber) booking.orderNumber='LVN-'+booking.id.replaceAll('-','').slice(0,12).toUpperCase();
+  if(!feeDetails(booking)) return notice('Chị kiểm tra lại mức phí. Tổng phí không được vượt tiền phòng.',true);
+  if(!validBooking(booking)) return notice('Chị kiểm tra tên khách, tiền phòng và chọn ngày trả sau ngày nhận.',true);
+  const conflict=state.bookings.find(b=>b.id!==editing && overlap(b,booking));
+  if(conflict) return notice('Phòng này trùng lịch với đơn của '+conflict.guest+' ('+short(conflict.arrival)+'–'+short(conflict.departure)+').',true);
+  try {
+    await persist({...state,bookings:[...state.bookings.filter(b=>b.id!==editing),booking]});
+    if(!monthly) $('start').value=booking.arrival;
+    reset(booking.room,booking.arrival);
+    renderCalendar();
+    renderList(); renderRevenue();
+    notice('Đã lưu đơn của '+booking.guest+'.');
+  } catch(error) { notice(error.message,true); }
+};
+field('arrival').onchange=()=>{
+  if(validDate(field('arrival').value) && field('departure').value<=field('arrival').value) field('departure').value=shift(field('arrival').value,1);
+};
+$('clear').onclick=()=>reset();
+$('search').oninput=renderList;
+$('sourceFilter').onchange=renderList;
+$('start').onchange=renderCalendar;
+$('month').onchange=()=>{
+  if(!$('month').value) $('month').value=now().slice(0,7);
+  renderCalendar();
+  $('calendarScroll').scrollLeft=0;
+};
+$('weekView').onclick=()=>selectView(false);
+$('monthView').onclick=()=>selectView(true);
+for(const [id,count] of [['prev',-1],['next',1],['today',0]]) $(id).onclick=()=>{
+  if(monthly) $('month').value=count?moveMonth($('month').value || now().slice(0,7),count):now().slice(0,7);
+  else $('start').value=count?shift($('start').value||now(),7*count):now();
+  renderCalendar();
+  $('calendarScroll').scrollLeft=0;
+};
+$('backup').onclick=()=>{
+  const url=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));
+  const link=document.createElement('a');
+  link.href=url;
+  link.download='homestay-sao-luu-'+now()+'.json';
+  link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+$('restore').onclick=()=>$('file').click();
+$('file').onchange=async()=>{
+  const file=$('file').files[0];
+  $('file').value='';
+  if(!file) return;
+  try {
+    let data;
+    try { data=JSON.parse(await file.text()); } catch { throw Error('Tệp sao lưu không đọc được.'); }
+    if(!validData(data)) throw Error('Tệp sao lưu không hợp lệ.');
+    if(!confirm('Khôi phục sẽ thay thế danh sách phòng và đơn hiện tại. Chị muốn tiếp tục?')) return;
+    await persist(data);
+    renderRooms(); reset(); renderCalendar(); renderList(); renderRevenue();
+    $('storageNotice').textContent='Đã khôi phục '+state.bookings.length+' đơn.';
+  } catch(error) { $('storageNotice').textContent=error.message; }
+};
+const today=now();
+$('revenueMonth').value=today.slice(0,7);
+$('revenueYear').value=today.slice(0,4);
+$('revenueFrom').value=today.slice(0,7)+'-01';
+$('revenueTo').value=today;
+for(const id of ['revenuePeriod','revenueRoom','revenueMonth','revenueYear','revenueFrom','revenueTo']) $(id).onchange=renderRevenue;
+$('start').value=today;
+renderRooms(); reset(); renderCalendar(); renderList(); renderRevenue();
+
+let stopWatching;
+let retry;
+const connectionStatus=$('connectionStatus');
+const main=document.querySelector('main');
+const loginStatus=$('loginStatus');
+$('google').onclick=async()=>{
+  $('google').disabled=true;
+  loginStatus.textContent='';
+  try {
+    if(mobile && location.hostname!==signInHost) {
+      location.assign('https://'+signInHost+'/');
+      return;
+    }
+    try { await setPersistence(auth,browserLocalPersistence); } catch {}
+    const provider=new GoogleAuthProvider();
+    if(mobile) { sessionStorage.setItem('lvnGooglePending','1'); await signInWithRedirect(auth,provider); }
+    else await signInWithPopup(auth,provider);
+  }
+  catch {loginStatus.textContent='Chưa đăng nhập được. Chị kiểm tra cửa sổ Google rồi thử lại.';}
+  finally {$('google').disabled=false;}
+};
+$('googlePopup').onclick=async()=>{
+  try {await signInWithPopup(auth,new GoogleAuthProvider());}
+  catch(error){loginStatus.textContent='Google chưa đăng nhập được ('+(error.code || 'không rõ lỗi')+').';}
+};
+$('logout').onclick=()=>signOut(auth);
+getRedirectResult(auth).then(result=>{
+  const pending=sessionStorage.getItem('lvnGooglePending');
+  sessionStorage.removeItem('lvnGooglePending');
+  if(pending && !result && !auth.currentUser) loginStatus.textContent='Google đã quay về nhưng phiên đăng nhập chưa được lưu. Chị bấm Dùng cách đăng nhập khác.';
+}).catch(error=>{
+  loginStatus.textContent='Google chưa đăng nhập được ('+(error.code || 'không rõ lỗi')+').';
+});
+onAuthStateChanged(auth,user=>{
+  stopWatching?.();
+  clearTimeout(retry);
+  connectionStatus.textContent='';
+  main.hidden=true;
+  $('login').hidden=false;
+  state=initial;
+  revision=null;
+  if(!user) return;
+  loginStatus.textContent='Đang mở lịch…';
+  function watch() {
+  stopWatching=onSnapshot(schedule,{includeMetadataChanges:true},snapshot=>{
+    if(snapshot.metadata.hasPendingWrites) return;
+    if(snapshot.metadata.fromCache) {
+      connectionStatus.textContent='Đang kết nối lại. Lịch đang hiển thị có thể chưa cập nhật.';
+      return;
+    }
+    connectionStatus.textContent='';
+    try {
+      const firstLoad=revision===null;
+      applySnapshot(snapshot);
+      if(firstLoad) reset();
+      main.hidden=false;
+      $('login').hidden=true;
+      loginStatus.textContent='';
+    } catch(error){loginStatus.textContent=error.message;}
+  },error=>{
+    if(error.code!=='permission-denied' && auth.currentUser?.uid===user.uid) {
+      connectionStatus.textContent='Đang kết nối lại với lịch…';
+      if(main.hidden) loginStatus.textContent=connectionStatus.textContent;
+      retry=setTimeout(watch,5000);
+      return;
+    }
+    main.hidden=true;
+    $('login').hidden=false;
+    loginStatus.textContent=error.code==='permission-denied'?'Gmail này chưa được cấp quyền vào lịch.':'Chưa mở được lịch. Chị kiểm tra kết nối rồi tải lại trang.';
+  });
+  }
+  watch();
+});
+</script></html>

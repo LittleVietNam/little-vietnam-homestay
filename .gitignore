@@ -1,0 +1,9 @@
+node_modules/
+.firebase/
+firebase-debug.log*
+*-debug.log*
+check.mjs
+Publish.ps1
+pnpm-lock.yaml
+pnpm-workspace.yaml
+package.json
